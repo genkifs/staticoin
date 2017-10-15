@@ -385,7 +385,7 @@ contract Pricer is I_Pricer,
         bytes32 TrasID;
         TrasID=oraclize_query(DELAY, "URL", sURL);
         RevTransaction[TrasID]=_actionID;
-		return _TrasID;
+	_TrasID=uint(TrasID);;
     }
 }
 
