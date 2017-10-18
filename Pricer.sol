@@ -276,7 +276,8 @@ contract Pricer is I_Pricer,
 	mortal, 
 	usingOraclize, 
 	DSParser {
-	// <pair_name> = pair name
+    // https://api.kraken.com/
+    // <pair_name> = pair name
     // a = ask array(<price>, <whole lot volume>, <lot volume>),
     // b = bid array(<price>, <whole lot volume>, <lot volume>),
     // c = last trade closed array(<price>, <lot volume>),
@@ -289,11 +290,11 @@ contract Pricer is I_Pricer,
 	
     function Pricer(string _URL) {
 		/** @dev Constructor, allows the pricer URL to be set
-          * @param _URL of the web query
-          * @return nothing
-        */
-		oraclize_setNetwork();
-		sURL=_URL;
+          	* @param _URL of the web query
+          	* @return nothing
+        	*/
+	oraclize_setNetwork();
+	sURL=_URL;
     }
 
 	function () {
@@ -304,9 +305,9 @@ contract Pricer is I_Pricer,
     function setMinter(address _newAddress) 
 		onlyOwner {
 		/** @dev Allows the address of the minter to be set
-          * @param _newAddress Address of the minter
-          * @return nothing
-        */
+          	* @param _newAddress Address of the minter
+          	* @return nothing
+        	*/
         mint=I_minter(_newAddress);
     }
 
@@ -314,27 +315,27 @@ contract Pricer is I_Pricer,
 		constant 
 		returns (uint128 _value) {
 		/** @dev ETH cost of calling the oraclize 
-          * @param _newAddress Address of the minter
-          * @return nothing
-        */
-		return cast(oraclize_getPrice("URL")); 
+          	* @param _newAddress Address of the minter
+          	* @return nothing
+        	*/
+	return cast(oraclize_getPrice("URL")); 
     }
 
     function QuickPrice() 
 		payable {
 		/** @dev Gets the latest price.  Be careful, All eth sent is kept by the contract.
-          * @return nothing, but the new price will be stored in variable lastPrice
-        */
+         	 * @return nothing, but the new price will be stored in variable lastPrice
+        	*/
         bytes32 TrasID =oraclize_query(1, "URL", sURL);
         RevTransaction[TrasID]=0;
     }
 	
     function __callback(bytes32 myid, string result) {
 		/** @dev ORACLIZE standard callback function-
-          * @param myid Pricer transaction ID
-		  * @param result Address of the minter
-          * @return calls minter.PriceReturn() with the price
-        */
+         	 * @param myid Pricer transaction ID
+		 * @param result Address of the minter
+         	 * @return calls minter.PriceReturn() with the price
+        	*/
         if (msg.sender != oraclize_cbAddress()) revert(); // Only oraclize
         bytes memory tempEmptyStringTest = bytes(result); // Array uses memory
         if (tempEmptyStringTest.length == 0) {
@@ -348,40 +349,40 @@ contract Pricer is I_Pricer,
         delete RevTransaction[myid]; // free up the memory
     }
 
-	function setGas(uint gasPrice) 
+    function setGas(uint gasPrice) 
 		onlyOwner 
 		returns(bool) {
 		/** @dev Allows oraclize gas cost to be changed
-          * @return True if sucessful
-        */
+          	* @return True if sucessful
+        	*/
 		oraclize_setCustomGasPrice(gasPrice);
 		return true;
     }
 	
-	function collectFee() 
+    function collectFee() 
 		onlyOwner 
 		returns(bool) {
 		/** @dev Allows ETH to be removed from this contract (only this one, not the minter)
-          * @return True if sucessful
-        */
-        return owner.send(this.balance);
+        	  * @return True if sucessful
+        	*/
+        	return owner.send(this.balance);
 		return true;
     }
 	
-	modifier onlyminter() {
-      if (msg.sender==address(mint)) 
-      _;
+    modifier onlyminter() {
+      		if (msg.sender==address(mint)) 
+      		_;
     }
 
     function requestPrice(uint _actionID) 
 		payable 
 		onlyminter 
 		returns (uint _TrasID){
-		/** @dev Minter only functuon.  Needs to be called with enough eth
-          * @param _actionID Pricer transaction ID
-          * @return calls minter.PriceReturn() with the price
-        */
-        // 
+		/** @dev Minter only function.  Needs to be called with enough eth.
+          	* @param _actionID minter action requested (mint/melt static/risk)
+          	* @return _TrasID the Oraclize query which calls __callback() sending the price to minter.PriceReturn() 
+        	*/
+        	// 
         bytes32 TrasID;
         TrasID=oraclize_query(DELAY, "URL", sURL);
         RevTransaction[TrasID]=_actionID;
