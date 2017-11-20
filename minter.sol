@@ -271,9 +271,8 @@ contract canFreeze is owned {
 	//Basically a "break glass in case of emergency"
     bool public frozen=false;
     modifier LockIfFrozen() {
-        if (!frozen){
-            _;
-        }
+        require(!frozen);
+        _;
     }
     function Freeze() onlyOwner {
         // fixes the price and allows everyone to redeem their coins at the current value
@@ -293,9 +292,8 @@ contract oneWrite {
     written = false;
   }
   modifier LockIfUnwritten() {
-    if (written){
-        _;
-    }
+    require(written);
+    _;
   }
   modifier writeOnce() {
     if (!written){
@@ -337,7 +335,7 @@ contract pricerControl is canFreeze {
     }
 
     modifier onlyPricer() {
-      if (msg.sender==address(pricer))
+      require(msg.sender==address(pricer));
       _;
     }
 
@@ -577,7 +575,7 @@ contract minter is I_minter, DSBaseActor, oneWrite, pricerControl, DSMath{ //
 		* @return ratio
         	*/
         if(Risk.totalSupply()>0){
-            return wdiv(cast(this.balance) , cast(Risk.totalSupply())); //  this.balance/Risk.totalSupply
+            return wdiv(wsub(cast(this.balance),PendingETH) , cast(Risk.totalSupply())); //  this.balance/Risk.totalSupply
         }else{
             return 0;
         }
@@ -619,7 +617,7 @@ contract minter is I_minter, DSBaseActor, oneWrite, pricerControl, DSMath{ //
         */
         Risk=I_coin(newRisk);
         Static=I_coin(newStatic);
-	PRICER_DELAY = 2 days;
+	    PRICER_DELAY = 2 days;
     }
 	
 	//****************************//	
@@ -872,8 +870,9 @@ contract minter is I_minter, DSBaseActor, oneWrite, pricerControl, DSMath{ //
 		  * @param _action Allows Static or Risk coins to be minted
 		  * @return transaction ID which can be viewed in the pending mapping
        		*/
-		require(IsWallet(_user));
-		uint128 toCredit;
+       	require(pricer==future);
+	require(IsWallet(_user));
+	uint128 toCredit;
         uint128 Fee=wmax(wmul(_amount,mintFee),pricer.queryCost()); // fee is the maxium of the pricer query cost and a mintFee% of value sent
         if(wless(_amount,Fee)) revert(); //log0('Not enough ETH to mint');
 		TransID++;
